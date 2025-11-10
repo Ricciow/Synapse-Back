@@ -79,7 +79,7 @@ async def list_models():
     return modelos
 
 @router.get("/{conversation_id}",)
-async def get_conversation_history(conversation_id: str):
+async def get_chat_data(conversation_id: str):
     resultado = get_chat(conversation_id)
 
     if(resultado == None):
@@ -93,8 +93,6 @@ async def delete_conversation(conversation_id: str):
 
     if(not resultado):
         raise CONVERSA_NAO_ENCONTRADA
-
-    return {"message": "Chat deleted successfully."}
 
 @router.patch("/{conversation_id}")
 async def update_conversation_title(conversation_id: str, payload: ConversationUpdate):
