@@ -1,5 +1,5 @@
 from database.database import chats
-import uuid
+from bson.objectid import ObjectId
 
 # Estrutura de um chat:
 # {
@@ -13,15 +13,7 @@ import uuid
 #   ]
 # }
 
-# Importe ObjectId para converter strings de ID em ObjectIds do MongoDB
-from bson.objectid import ObjectId
-# Assumindo que 'chats' é sua coleção do pymongo
-# import pymongo
-# client = pymongo.MongoClient("mongodb://...")
-# db = client["your_db"]
-# chats = db["your_collection"]
-
-def createChat(title, description):
+def create_chat(title, description):
     chat_document = {
         "title": title, 
         "description": description, 
@@ -32,47 +24,47 @@ def createChat(title, description):
     
     return chat_document
 
-def deleteChat(id):
+def delete_chat(id):
     resultado = chats.delete_one({"_id": ObjectId(id)})
     return resultado.deleted_count > 0
 
-def getChatHistory(id):
-    queryResult = chats.find_one(
+def get_chat_history(id):
+    QUERY_RESULT = chats.find_one(
         {"_id": ObjectId(id)}, 
         {"_id": 0, "messages": 1}
     )
-    return queryResult
+    return QUERY_RESULT
 
-def getChat(id):
-    queryResult = chats.find_one(
+def get_chat(id):
+    QUERY_RESULT = chats.find_one(
         {"_id": ObjectId(id)}, 
         {"_id": 0, "title": 1, "description": 1, "messages": 1}
     )
-    return queryResult
+    return QUERY_RESULT
 
-def getAllChatsDescriptions():
-    queryResult = chats.find({}, {"title": 1, "description": 1})
+def get_all_chats_descriptions():
+    QUERY_RESULT = chats.find({}, {"title": 1, "description": 1})
     
     chat_list = []
-    for doc in queryResult:
+    for doc in QUERY_RESULT:
         doc["id"] = str(doc.pop("_id"))
         chat_list.append(doc)
         
     return chat_list
 
-def addMessage(id, message):
+def add_message(id, message):
     chats.update_one(
         {"_id": ObjectId(id)}, 
         {"$push": {"messages": message}}
     )
 
-def removeLastMessage(id):
+def remove_last_message(id):
     chats.update_one(
         {"_id": ObjectId(id)}, 
         {"$pop": {"messages": 1}}
     )
 
-def updateChatTitle(id, title):
+def update_chat_title(id, title):
     chats.update_one(
         {"_id": ObjectId(id)}, 
         {"$set": {"title": title}}

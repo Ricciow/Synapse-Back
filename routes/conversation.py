@@ -1,12 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from AI.aiManager import gerarRespostaStream
+from AI.aiManager import gerar_resposta_stream
 
 from AI.Modelos import Modelos
 from AI.Personas import Personas
-from database.chats import *
-
-from routes.auth import get_current_user_id
+from database.chats import get_chat_history, add_message, get_chat, delete_chat, update_chat_title, create_chat, get_all_chats_descriptions
 
 import json
 
@@ -29,14 +27,16 @@ class MessageRequest(BaseModel):
     model: Modelos = Modelos.GEMINI_25_FLASH
     persona: Personas = Personas.Roteirista
 
-def gerarResposta(id: str, prompt : str, modelo : Modelos = Modelos.GEMINI_25_FLASH, persona : Personas = Personas.Roteirista):
-    userPrompt = {"role": "user", "content": prompt}
+CONVERSA_NAO_ENCONTRADA = HTTPException(status_code=404, detail="Conversa não encontrada.")
 
-    historico = getChatHistory(id)["messages"]
+def gerar_resposta(id: str, prompt : str, modelo : Modelos = Modelos.GEMINI_25_FLASH, persona : Personas = Personas.Roteirista):
+    USER_PROMPT = {"role": "user", "content": prompt}
 
-    historico.append(userPrompt)
+    historico = get_chat_history(id)["messages"]
 
-    addMessage(id, userPrompt)
+    historico.append(USER_PROMPT)
+
+    add_message(id, USER_PROMPT)
 
     resposta = {
         "role": "assistant",
@@ -44,22 +44,22 @@ def gerarResposta(id: str, prompt : str, modelo : Modelos = Modelos.GEMINI_25_FL
         "reasoning": "",
     }
     
-    for response in gerarRespostaStream(historico, modelo):
+    for response in gerar_resposta_stream(historico, modelo, persona):
         resposta["content"] = resposta["content"] + response["content"]
         resposta["reasoning"] = resposta["reasoning"] + response["reasoning"]
 
         yield json.dumps(response) + "\n"
 
-    addMessage(id, resposta)
+    add_message(id, resposta)
 
     return []
 
 @router.get("/history/{conversation_id}",)
-async def get_conversation_history(conversation_id: str, user_id: str = Depends(get_current_user_id)):
-   resultado = getChatHistory(conversation_id)
+async def get_conversation_history(conversation_id: str):
+   resultado = get_chat_history(conversation_id)
 
    if(resultado == None):
-        raise HTTPException(status_code=404, detail="Conversa não encontrada.")
+        raise CONVERSA_NAO_ENCONTRADA
 
    return resultado["messages"]
 
@@ -75,36 +75,36 @@ async def list_models():
     return modelos
 
 @router.get("/{conversation_id}",)
-async def get_conversation_history(conversation_id: str, user_id: str = Depends(get_current_user_id)):
-   resultado = getChat(conversation_id)
+async def get_conversation_history(conversation_id: str):
+   resultado = get_chat(conversation_id)
 
    if(resultado == None):
-        raise HTTPException(status_code=404, detail="Conversa não encontrada.")
+        raise CONVERSA_NAO_ENCONTRADA
 
    return resultado
 
 @router.delete("/{conversation_id}", status_code=204)
-async def delete_conversation(conversation_id: str, user_id: str = Depends(get_current_user_id)):
-    resultado = deleteChat(conversation_id)
+async def delete_conversation(conversation_id: str):
+    resultado = delete_chat(conversation_id)
 
     if(not resultado):
-        raise HTTPException(status_code=404, detail="Conversa não encontrada.")
+        raise CONVERSA_NAO_ENCONTRADA
 
     return {"message": "Chat deleted successfully."}
 
 @router.patch("/{conversation_id}")
-async def update_conversation_title(conversation_id: str, payload: ConversationUpdate, user_id: str = Depends(get_current_user_id)):
-    return updateChatTitle(conversation_id, payload.title)
+async def update_conversation_title(conversation_id: str, payload: ConversationUpdate):
+    return update_chat_title(conversation_id, payload.title)
 
 @router.post("/{conversation_id}/message")
-async def send_message(conversation_id: str, payload: MessageRequest, user_id: str = Depends(get_current_user_id)):
-    return StreamingResponse(gerarResposta(conversation_id, payload.user_input, modelo=payload.model, persona=payload.persona), media_type="text/event-stream")
+async def send_message(conversation_id: str, payload: MessageRequest):
+    return StreamingResponse(gerar_resposta(conversation_id, payload.user_input, modelo=payload.model, persona=payload.persona), media_type="text/event-stream")
 
 
 @router.post("/", status_code=201)
-async def create_conversation(payload: ConversationCreate, user_id: str = Depends(get_current_user_id)):
-    return createChat(payload.title, payload.description)
+async def create_conversation(payload: ConversationCreate):
+    return create_chat(payload.title, payload.description)
     
 @router.get("/")
-async def list_conversations(user_id: str = Depends(get_current_user_id)):
-    return getAllChatsDescriptions()
+async def list_conversations(user_id):
+    return get_all_chats_descriptions()

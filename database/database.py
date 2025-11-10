@@ -22,9 +22,7 @@ print("Conectando com CosmoDB...")
 if(client.is_mongos):
     print("Conectado com CosmoDB")
 
-db = client.get_database("cineai")
+db = client.get_database("synapse")
 
 chats = db["chats"]
-projects = db["projects"]
-users = db["users"]
 
