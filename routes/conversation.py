@@ -25,11 +25,11 @@ class ConversationCreate(BaseModel):
 class MessageRequest(BaseModel):
     user_input: str
     model: Modelos = Modelos.GEMINI_25_FLASH
-    persona: Personas = Personas.Roteirista
+    persona: Personas = Personas.Agente
 
 CONVERSA_NAO_ENCONTRADA = HTTPException(status_code=404, detail="Conversa não encontrada.")
 
-def gerar_resposta(id: str, prompt : str, modelo : Modelos = Modelos.GEMINI_25_FLASH, persona : Personas = Personas.Roteirista):
+def gerar_resposta(id: str, prompt : str, modelo : Modelos = Modelos.GEMINI_25_FLASH, persona : Personas = Personas.Agente):
     USER_PROMPT = {"role": "user", "content": prompt}
 
     historico = get_chat_history(id)["messages"]
