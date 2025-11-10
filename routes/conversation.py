@@ -4,7 +4,7 @@ from AI.aiManager import gerar_resposta_stream
 
 from AI.Modelos import Modelos
 from AI.Personas import Personas
-from database.chats import get_chat_history, add_message, get_chat, delete_chat, update_chat_title, create_chat, get_all_chats_descriptions
+from database.chats import get_chat_history, add_message, get_chat, delete_chat, update_chat_title, create_chat, get_all_chats_titles
 
 import json
 
@@ -20,7 +20,6 @@ class ConversationUpdate(BaseModel):
 
 class ConversationCreate(BaseModel):
     title: str
-    description: str
 
 class MessageRequest(BaseModel):
     user_input: str
@@ -103,8 +102,8 @@ async def send_message(conversation_id: str, payload: MessageRequest):
 
 @router.post("/", status_code=201)
 async def create_conversation(payload: ConversationCreate):
-    return create_chat(payload.title, payload.description)
+    return create_chat(payload.title)
     
 @router.get("/")
 async def list_conversations(user_id):
-    return get_all_chats_descriptions()
+    return get_all_chats_titles()
