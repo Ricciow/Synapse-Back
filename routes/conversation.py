@@ -4,7 +4,7 @@ from AI.aiManager import gerar_resposta_stream
 
 from AI.Modelos import Modelos
 from AI.Personas import Personas
-from database.chats import get_chat_history, add_message, get_chat, delete_chat, update_chat_title, create_chat, get_all_chats_titles
+from database.chats import get_chat_history, add_message, get_chat, delete_chat, update_chat_title, create_chat, get_all_chats_titles, add_model_history
 
 import json
 
@@ -31,11 +31,16 @@ CONVERSA_NAO_ENCONTRADA = HTTPException(status_code=404, detail="Conversa não e
 def gerar_resposta(id: str, prompt : str, modelo : Modelos = Modelos.GEMINI_25_FLASH, persona : Personas = Personas.Agente):
     USER_PROMPT = {"role": "user", "content": prompt}
 
-    historico = get_chat_history(id)["messages"]
+    mensagens = get_chat_history(id)["messages"]
+
+    historico =  next((d for d in mensagens if d['model'] == modelo.value), {}).get("messages", [])
+
+    if(historico == []):
+        add_model_history(id, modelo.value)
 
     historico.append(USER_PROMPT)
 
-    add_message(id, USER_PROMPT)
+    add_message(id, USER_PROMPT, modelo.value)
 
     resposta = {
         "role": "assistant",
@@ -49,7 +54,7 @@ def gerar_resposta(id: str, prompt : str, modelo : Modelos = Modelos.GEMINI_25_F
 
         yield json.dumps(response) + "\n"
 
-    add_message(id, resposta)
+    add_message(id, resposta, modelo.value)
 
     return []
 
@@ -75,12 +80,12 @@ async def list_models():
 
 @router.get("/{conversation_id}",)
 async def get_conversation_history(conversation_id: str):
-   resultado = get_chat(conversation_id)
+    resultado = get_chat(conversation_id)
 
-   if(resultado == None):
+    if(resultado == None):
         raise CONVERSA_NAO_ENCONTRADA
 
-   return resultado
+    return resultado
 
 @router.delete("/{conversation_id}", status_code=204)
 async def delete_conversation(conversation_id: str):
@@ -97,6 +102,9 @@ async def update_conversation_title(conversation_id: str, payload: ConversationU
 
 @router.post("/{conversation_id}/message")
 async def send_message(conversation_id: str, payload: MessageRequest):
+    if(get_chat(conversation_id) == None):
+        raise CONVERSA_NAO_ENCONTRADA
+
     return StreamingResponse(gerar_resposta(conversation_id, payload.user_input, modelo=payload.model, persona=payload.persona), media_type="text/event-stream")
 
 
@@ -105,5 +113,5 @@ async def create_conversation(payload: ConversationCreate):
     return create_chat(payload.title)
     
 @router.get("/")
-async def list_conversations(user_id):
+async def list_conversations():
     return get_all_chats_titles()

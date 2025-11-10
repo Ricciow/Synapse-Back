@@ -5,25 +5,30 @@ from bson.objectid import ObjectId
 # {
 #   "_id": "chat_id_A",
 #   "titulo": "Chat nome",
-#   "messages": {
-#     "deepseek": [
-#         { "role": "user", "content": "Me dê ideias...", "reasoning": null },
-#         { "role": "assistant", "content": "...", "reasoning": "..." }
-#     ],
-#     "gemini": [
-#         { "role": "user", "content": "Me dê ideias...", "reasoning": null },
-#         { "role": "assistant", "content": "...", "reasoning": "..." }
-#     ]   
-#   }
+#   "messages": [
+#     {
+#         "model": "DeepSeek",
+#         "messages": [
+#             {
+#                 "role": "user",
+#                 "content": "Olá"
+#             },
+#             {
+#                 "role": "assistant",
+#                 "content": "Olá"
+#             }
+#         ]
+#     }  
+#   ]
 # }
 
 def create_chat(title):
     chat_document = {
         "title": title, 
-        "messages": {}
+        "messages": []
     }
     chats.insert_one(chat_document)
-    chat_document["_id"] = str(chat_document["_id"])
+    chat_document["id"] = str(chat_document.pop("_id"))
     
     return chat_document
 
@@ -55,10 +60,16 @@ def get_all_chats_titles():
         
     return chat_list
 
-def add_message(id, message, model):
+def add_model_history(id, model):
     chats.update_one(
         {"_id": ObjectId(id)}, 
-        {"$push": {"messages." + model: message}}
+        {"$push": {"messages": {"model": model, "messages": []}}}
+    )
+
+def add_message(id, message, model):
+    chats.update_one(
+        {"_id": ObjectId(id), "messages.model": model}, 
+        {"$push": {"messages.$.messages": message}}
     )
 
 def update_chat_title(id, title):
@@ -66,3 +77,8 @@ def update_chat_title(id, title):
         {"_id": ObjectId(id)}, 
         {"$set": {"title": title}}
     )
+
+    return {
+        "id": id,
+        "title": title
+    }
