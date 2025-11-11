@@ -12,6 +12,11 @@ class Modelos(Enum):
         "model": "google/gemini-2.5-flash",
         "provider": "gemini"
     }
+    GPT_OSS_20B = {
+        "name": "gpt-oss-20b",
+        "model": "openai/gpt-oss-20b:free",
+        "provider": "openai"
+    }
 
     @property
     def value(self):
