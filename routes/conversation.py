@@ -80,7 +80,10 @@ async def list_models():
 
 @router.get("/{conversation_id}",)
 async def get_chat_data(conversation_id: str):
-    resultado = get_chat(conversation_id)
+    try:
+        resultado = get_chat(conversation_id)
+    except Exception:
+        raise CONVERSA_NAO_ENCONTRADA
 
     if(resultado == None):
         raise CONVERSA_NAO_ENCONTRADA
