@@ -61,12 +61,16 @@ def gerar_resposta(id: str, prompt : str, modelo : Modelos = Modelos.GEMINI_25_F
 
 @router.get("/history/{conversation_id}",)
 async def get_conversation_history(conversation_id: str):
-   resultado = get_chat_history(conversation_id)
+    try:
+        resultado = get_chat_history(conversation_id)
+        
+        if(resultado == None):
+                raise CONVERSA_NAO_ENCONTRADA
 
-   if(resultado == None):
+        return resultado["messages"]
+    except Exception:
         raise CONVERSA_NAO_ENCONTRADA
 
-   return resultado["messages"]
 
 @router.get("/models")
 async def list_models():
