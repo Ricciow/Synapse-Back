@@ -30,17 +30,18 @@ CONVERSA_NAO_ENCONTRADA = HTTPException(status_code=404, detail="Conversa não e
 
 def gerar_resposta(id: str, prompt : str, modelo : Modelos = Modelos.GEMINI_25_FLASH, persona : Personas = Personas.Agente):
     USER_PROMPT = {"role": "user", "content": prompt}
+    MODEL_NAME = modelo.valor["name"]
 
     mensagens = get_chat_history(id)["messages"]
 
-    historico =  next((d for d in mensagens if d['model'] == modelo.value), {}).get("messages", [])
+    historico =  next((d for d in mensagens if d['model'] == MODEL_NAME), {}).get("messages", [])
 
     if(historico == []):
-        add_model_history(id, modelo.value)
+        add_model_history(id, MODEL_NAME)
 
     historico.append(USER_PROMPT)
 
-    add_message(id, USER_PROMPT, modelo.value)
+    add_message(id, USER_PROMPT, MODEL_NAME)
 
     resposta = {
         "role": "assistant",
@@ -54,7 +55,7 @@ def gerar_resposta(id: str, prompt : str, modelo : Modelos = Modelos.GEMINI_25_F
 
         yield json.dumps(response) + "\n"
 
-    add_message(id, resposta, modelo.value)
+    add_message(id, resposta, MODEL_NAME)
 
     return []
 
