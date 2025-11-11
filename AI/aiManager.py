@@ -20,7 +20,7 @@ def gerar_resposta_stream(historico : list, modelo : Modelos = Modelos.DeepSeek,
     })
 
     completion = client.chat.completions.create(
-        model = modelo.value,
+        model = modelo.model,
         messages = historico,
         stream=True
     )

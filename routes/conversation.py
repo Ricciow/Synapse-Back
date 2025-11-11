@@ -63,7 +63,7 @@ def gerar_resposta(id: str, prompt : str, modelo : Modelos = Modelos.GEMINI_25_F
 async def get_conversation_history(conversation_id: str):
     try:
         resultado = get_chat_history(conversation_id)
-        
+
         if(resultado == None):
                 raise CONVERSA_NAO_ENCONTRADA
 
@@ -76,11 +76,7 @@ async def get_conversation_history(conversation_id: str):
 async def list_models():
     modelos = []
     for modelo in Modelos:
-        modelos.append({
-            "name": modelo.valor["name"],
-            "model": modelo.valor["model"],
-            "provider": modelo.valor["provider"]
-        })
+        modelos.append(modelo.valor)
     return modelos
 
 @router.get("/{conversation_id}",)

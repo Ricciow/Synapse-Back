@@ -20,8 +20,12 @@ class Modelos(Enum):
 
     @property
     def value(self):
-        return self._value_["model"]
+        return self._value_["name"]
 
     @property
     def valor(self):
         return self._value_
+    
+    @property
+    def model(self):
+        return self._value_["model"]
